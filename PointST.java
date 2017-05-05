@@ -58,7 +58,7 @@ public class PointST<Value> {
 		Point2D ceiling, floor;
 		ceiling = bst.ceiling(p);
 		floor = bst.floor(p);
-		if (ceiling.distanceTo(p) > floor.distanceTo(p)) return floor;
+		if (ceiling.distanceSquareTo(p) > floor.distanceSquareTo(p)) return floor;
 		return ceiling;	
 	}	
 	// unit testing (required)
