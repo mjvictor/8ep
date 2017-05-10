@@ -55,11 +55,14 @@ public class PointST<Value> {
 	public Point2D nearest(Point2D p) {
 		if (p == null) throw new java.lang.NullPointerException("Argument to nearst() is null");
 		if (bst.size() == 0) return null;
-		Point2D ceiling, floor;
-		ceiling = bst.ceiling(p);
-		floor = bst.floor(p);
-		if (ceiling.distanceSquaredTo(p) > floor.distanceSquaredTo(p)) return floor;
-		return ceiling;	
+		Point2D near = null;
+		Iterable<Point2D> aux = points();
+		for (Point2D tmp : aux) {
+			if (near == null || p.distanceSquaredTo(tmp) < p.distanceSquaredTo(near)) {
+				near = tmp;
+			}
+		}
+		return near;
 	}	
 	// unit testing (required)
 	public static void main(String[] args) {
