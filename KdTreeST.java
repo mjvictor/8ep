@@ -1,7 +1,8 @@
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.Queue;
-
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.MaxPQ;
 
 
 public class KdTreeST<Value> {
@@ -47,12 +48,13 @@ public class KdTreeST<Value> {
 		if (root == null) {
 			Node new_node = new Node(p, val, X);
 			new_node.rect = new RectHV(0.0, 0.0, 1.0, 1.0);
+			root = new_node;
 		}
 		else put(root, p, val);
 	}
 	private void put(Node node, Point2D p, Value val) {
 		//X
-		if (node.axis	 == X) {
+		if (node.axis == X) {
 			//maior ou igual(com y diferentes)
 			if (p.x() > node.coor.x() || (p.x() == node.coor.x() && p.y() != node.coor.y())) {
 				if (node.right == null) {
@@ -201,7 +203,7 @@ public class KdTreeST<Value> {
 	public Point2D nearest(Point2D p) {
 		if (p == null) throw new java.lang.NullPointerException("Argument to nearest() is null");
 		if (root == null) return null;
-		Node max = root;
+		Node max = new Node (root.coor, root.val, root.axis);
 		nearest (root, p, max);
 		return max.coor;
 	}
@@ -210,41 +212,80 @@ public class KdTreeST<Value> {
 	//2.verificar qual é a melhor subarvore pra ir (o mesmo lado do splitting)
 	//3.se a distancia do ponto ate o retangulo da subarvore for maior que a distancia do ponto campeao ao ponto p, nem olha a subarvore.
 
-
-
 	private void nearest(Node node, Point2D p, Node max) {
 		//verifica se a distancia do node é maior que a distancia
-		if (node.coor.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p)) {
-			max = node;
+		double maxDist = max.coor.distanceSquaredTo(p);
+		if (node.coor.distanceSquaredTo(p) < maxDist) {
+			max.coor = node.coor;
 		}
 
 		if (node.right != null && node.left != null) {
 			//olha a direita primeiro e depois olha a esquerda 
 			if (node.right.rect.distanceSquaredTo(p) < node.left.rect.distanceSquaredTo(p)) {
-				if (node.right.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+				if (node.right.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.right, p, max);
-				if (node.left.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+				if (node.left.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.left, p, max);
 			}
 			//olha a esquerda primeiro e depois olha a direita
 			else {
-				if (node.left.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+				if (node.left.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.left, p, max);
-				if (node.right.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+				if (node.right.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.right, p, max);	
 			}
 		}
-		else if (node.right == null) {
+		else if (node.right == null && node.left != null) {
 			//vai pra left se precisar
-			if (node.left.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+			if (node.left.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.left, p, max); 
 		}
-		else {
+		else if (node.left == null && node.right != null) {
 			//vai pra right se precisar.
-			if (node.right.rect.distanceSquaredTo(p) < max.coor.distanceSquaredTo(p))
+			if (node.right.rect.distanceSquaredTo(p) < maxDist)
 					nearest(node.right, p, max);	
 		}
 	} 
+
+	public Iterable<Point2D> nearest(Point2D p, int k) {
+		if (p == null || k == null) throw new java.lang.NullPointerException("Argument to nearest() is null");
+		//inicializar direitinho
+		MaxPQ<Point2D> knear = new MaxPQ<>();
+		if (root == null) return knear;
+		nearest(root, p, k, knear);
+		return knear;
+	}
+
+	private void nearest (Node node, Point2D p, int k, MaxPQ max) {
+		if (max.size() < k) {
+			max.insert(node.coor);
+			if (node.right != null) nearest(node.right, p, k, max);
+			if (node.left != null) nearest(node.left, p, k, max);
+		}
+		else {
+			double maxDist = max.max().distanceSquaredTo(p);
+			if (node.coor.distanceSquaredTo(p) < maxDist) {
+				delMax();
+				max.insert(node.coor);
+			}
+			if (node.right != null && node.left != null) {
+				double 
+				if (node.right.rect.distanceSquaredTo(p) < node.left.rect.distanceSquaredTo(p)) {
+					if (node.right.rect.distanceSquaredTo(p) < maxDist)
+						nearest(node.right, p, max);
+					if (node.left.rect.distanceSquaredTo(p) < maxDist)
+						nearest(node.left, p, max);
+				}
+				//olha a esquerda primeiro e depois olha a direita
+				else {
+					if (node.left.rect.distanceSquaredTo(p) < maxDist)
+						nearest(node.left, p, max);
+					if (node.right.rect.distanceSquaredTo(p) < maxDist)
+						nearest(node.right, p, max);	
+				}	
+			}
+		}
+	}
 
 	// unit testing (required)
 	public static void main(String[] args) {
