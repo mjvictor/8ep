@@ -3,6 +3,7 @@ import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.MaxPQ;
+import java.util.Comparator;
 
 
 public class KdTreeST<Value> {
@@ -18,6 +19,7 @@ public class KdTreeST<Value> {
 		Node left;
 		boolean axis;
 		RectHV rect;
+		double dist;
 
 		public Node(Point2D p, Value val, boolean axis) {
 			coor = p;
@@ -238,55 +240,77 @@ public class KdTreeST<Value> {
 		else if (node.right == null && node.left != null) {
 			//vai pra left se precisar
 			if (node.left.rect.distanceSquaredTo(p) < maxDist)
-					nearest(node.left, p, max); 
+				nearest(node.left, p, max); 
 		}
 		else if (node.left == null && node.right != null) {
 			//vai pra right se precisar.
 			if (node.right.rect.distanceSquaredTo(p) < maxDist)
-					nearest(node.right, p, max);	
+				nearest(node.right, p, max);	
 		}
 	} 
 
 	public Iterable<Point2D> nearest(Point2D p, int k) {
-		if (p == null || k == null) throw new java.lang.NullPointerException("Argument to nearest() is null");
+		if (p == null || k <= 0) throw new java.lang.NullPointerException("Argument to nearest() is null");
 		//inicializar direitinho
-		MaxPQ<Point2D> knear = new MaxPQ<>();
-		if (root == null) return knear;
+		MaxPQ<Node> knear = new MaxPQ<>(new nearestComparator());
+		Queue<Point2D> queue = new Queue<>();
+		if (root == null) return queue;
 		nearest(root, p, k, knear);
-		return knear;
+		for (Node tmp : knear) {
+			queue.enqueue(tmp.coor);
+		}
+		return queue;
 	}
 
-	private void nearest (Node node, Point2D p, int k, MaxPQ max) {
+	private void nearest (Node node, Point2D p, int k, MaxPQ<Node> max) {
 		if (max.size() < k) {
-			max.insert(node.coor);
+			node.dist = node.coor.distanceSquaredTo(p);
+			max.insert(node);
 			if (node.right != null) nearest(node.right, p, k, max);
 			if (node.left != null) nearest(node.left, p, k, max);
 		}
 		else {
-			double maxDist = max.max().distanceSquaredTo(p);
+			double maxDist = max.max().coor.distanceSquaredTo(p);
 			if (node.coor.distanceSquaredTo(p) < maxDist) {
-				delMax();
-				max.insert(node.coor);
+				max.delMax();
+				max.insert(node);
 			}
 			if (node.right != null && node.left != null) {
-				double 
 				if (node.right.rect.distanceSquaredTo(p) < node.left.rect.distanceSquaredTo(p)) {
 					if (node.right.rect.distanceSquaredTo(p) < maxDist)
-						nearest(node.right, p, max);
+						nearest(node.right, p, k,max);
 					if (node.left.rect.distanceSquaredTo(p) < maxDist)
-						nearest(node.left, p, max);
+						nearest(node.left, p, k, max);
 				}
 				//olha a esquerda primeiro e depois olha a direita
 				else {
 					if (node.left.rect.distanceSquaredTo(p) < maxDist)
-						nearest(node.left, p, max);
+						nearest(node.left, p, k, max);
 					if (node.right.rect.distanceSquaredTo(p) < maxDist)
-						nearest(node.right, p, max);	
+						nearest(node.right, p, k, max);	
 				}	
 			}
+			else if (node.right == null && node.left != null) {
+				//vai pra left se precisar
+				if (node.left.rect.distanceSquaredTo(p) < maxDist)
+					nearest(node.left, p, k, max); 
+			}
+			else if (node.left == null && node.right != null) {
+				//vai pra right se precisar.
+				if (node.right.rect.distanceSquaredTo(p) < maxDist)
+					nearest(node.right, p, k, max);	
+			}
+
 		}
 	}
 
+	private class nearestComparator implements Comparator<Node> {
+		public int compare (Node node1, Node node2) {
+			if (node1.dist > node2.dist) return 1;
+			else if (node1.dist < node2.dist) return -1;
+			return 0;
+		}
+	}
 	// unit testing (required)
 	public static void main(String[] args) {
 
